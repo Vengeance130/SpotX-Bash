@@ -107,4 +107,4 @@ jobs:
         uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
         with:
           repository: ${{ github.repository }}
-          older-than-seconds: 307800 # CHANGE THIS VALUE AS YOU NEED
+          older-than-seconds: 100000 # CHANGE THIS VALUE AS YOU NEED
