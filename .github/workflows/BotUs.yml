@@ -1,0 +1,110 @@
+name: Deploy-main
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 10 * * *' # every day at 2:00 pm IST
+
+
+permissions: write-all
+  
+env:
+
+  # EDIT DEFAULT_COMMAND AND DEFAULT_RETRY_COMMAND IF YOU WANT
+  DEFAULT_COMMAND: timeout 3000 python ms_rewards_farmer.py --headless --repeat-shopping --dont-check-for-updates --superfast --skip-unusual --shuffle --no-images --discord ${{ secrets.webhook }} --on-finish exit
+  DEFAULT_RETRY_COMMAND: timeout 3000 python ms_rewards_farmer.py --headless --repeat-shopping --dont-check-for-updates --superfast --shuffle --skip-unusual --no-images --discord ${{ secrets.webhook }} --on-finish exit
+  
+  CUSTOM_COMMAND: ${{ secrets.CUSTOM_COMMAND }}
+  CUSTOM_RETRY_COMMAND: ${{ secrets.CUSTOM_RETRY_COMMAND }}
+  GITHUB_TOKEN: ${{ github.token }}
+  ACCOUNT: ${{ secrets.ACCOUNTS }}
+
+jobs:
+  Run:
+
+    runs-on: ubuntu-latest
+#    timeout-minutes: 90 # HASTAG THIS LINE IF YOU DON'T WANT TO LIMIT THE WORKFLOWS RUN TIME
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+
+# SET REPO STUFF STEP  
+
+    - name: Clone the repository into Sub-folder named 'Microsoft-Rewards-bot' and move it back to main directory
+      run: |
+        git clone https://github.com/farshadz1997/Microsoft-Rewards-bot
+        mv Microsoft-Rewards-bot/* .
+
+# CHECK DIR FOR TEST
+    - name: check dir
+      run: ls -a
+  
+# INSTALL REQUIRED STUFF TO RUN BOT
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+      
+    - name: Install required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+        pip install -r requirements.txt
+        
+    - name: Set secrets variable as environment variable
+      run: echo "$ACCOUNT" > accounts.json
+
+        
+# RUN THE BOT WITH SECRET COMMAND
+    - name: Run the Bot with env.CUSTOM_COMMAND
+      if: ${{ env.CUSTOM_COMMAND }}
+      run: ${{ env.CUSTOM_COMMAND }}
+
+    - name: Retry the Bot with env.CUSTOM_RETRY_COMMAND
+      if: ${{ failure() && env.CUSTOM_COMMAND }}
+      run: ${{ env.DEFAULT_RETRY_COMMAND }}
+
+# RUN THE BOT WITH DEFAULT COMMAND
+    - name: Run the Bot with env.DEFAULT_COMMAND
+      if: ${{ env.CUSTOM_COMMAND == '' }}
+      run: ${{ env.DEFAULT_COMMAND }}
+
+    - name: Retry the Bot with env.DEFAULT_RETRY_COMMAND
+      if: ${{ failure() && env.CUSTOM_COMMAND == '' }}
+      run: ${{ env.DEFAULT_RETRY_COMMAND }}
+      
+# RUN THE BOT AGAIN FOR NO REASON AT ALL
+    - name: Run the Bot again to ensure completeness
+      run: timeout 3000 python ms_rewards_farmer.py --headless --dont-check-for-updates --superfast --shuffle --skip-unusual --no-images --on-finish exit
+
+# CHECK LOG_ACCOUNTS.TXT     
+    - name: Check log after run
+      run: cat Logs_accounts.txt
+
+#    - name: Save logs.txt as an artifact
+#      uses: actions/upload-artifact@v3
+#      with:
+#        name: Log_accounts.txt
+#        path: ${{ github.WORKSPACE }}/Log_accounts.txt
+
+# USE THIS IF YOU WANT TO COMMIT ALL FILES CHANGES TO THE REPO
+#    - name: Git Auto Commit
+#      uses: stefanzweifel/git-auto-commit-action@v4
+#      with:
+#        skip_dirty_check: true
+#        skip_fetch: true
+#        skip_checkout: true
+#        push_options: -f
+
+  
+# DELETE WORKFLOWS WHICH ARE OLDER THAN ... SEC
+  Delete_old_workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old workflow runs
+        uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
+        with:
+          repository: ${{ github.repository }}
+          older-than-seconds: 307800 # CHANGE THIS VALUE AS YOU NEED
