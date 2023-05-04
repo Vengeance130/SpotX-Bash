@@ -3,7 +3,7 @@ name: Deploy-main
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 10 * * *' # every day at 2:00 pm IST
+    - cron: '30 12 * * *' # every day at 2:00 pm IST
 
 
 permissions: write-all
