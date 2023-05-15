@@ -49,7 +49,9 @@ jobs:
     - name: Connect to VPN
       uses: "kota65535/github-openvpn-connect-action@v2"
       with:
-        config_file: bengaluru.ovpn
+        config_file: IST.ovpn
+        username: ${{ secrets.OVPN_USERNAME }}
+        password: ${{ secrets.OVPN_PASSWORD }}
         
     - name: Set secrets variable as environment variable
       run: echo "$ACCOUNT" > accounts.json
