@@ -1,0 +1,76 @@
+
+name: Commit-IST
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 12 * * *' # every day at 3:30 pm IST
+
+  
+env:
+
+  # EDIT DEFAULT_COMMAND AND DEFAULT_RETRY_COMMAND IF YOU WANT
+  DEFAULT_COMMAND: timeout 5000 python ms_rewards_farmer.py --headless --dont-check-for-updates --superfast --skip-unusual --shuffle --no-images --discord ${{ secrets.webhook }} --on-finish exit
+  DEFAULT_RETRY_COMMAND: timeout 3000 python ms_rewards_farmer.py --headless --dont-check-for-updates --dont-check-internet --superfast --shuffle --skip-unusual --no-images --discord ${{ secrets.webhook }} --on-finish exit
+  
+  ACCOUNT: ${{ secrets.ACCOUNTS }}
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  Run:
+
+    runs-on: ubuntu-latest
+#    timeout-minutes: 90 # HASTAG THIS LINE IF YOU DON'T WANT TO LIMIT THE WORKFLOWS RUN TIME
+
+    steps:
+    - uses: actions/checkout@v3.4.0
+    - name: Set up Python
+      uses: actions/setup-python@v4.5.0
+      with:
+          python-version: '3.x'
+      
+
+# SET REPO STUFF STEP  
+
+    - name: Get the executable
+      run: |
+        git clone https://github.com/farshadz1997/Microsoft-Rewards-bot
+        mv Microsoft-Rewards-bot/* .
+
+  
+# INSTALL REQUIRED STUFF TO RUN BOT
+      
+    - name: Install required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+        sudo apt install -y openvpn openvpn-systemd-resolved
+        pip install -r requirements.txt
+        
+    - name: Connect to VPN
+      uses: "kota65535/github-openvpn-connect-action@v2"
+      with:
+        config_file: config.ovpn
+        
+    - name: Set secrets variable as environment variable
+      run: echo "$ACCOUNT" > accounts.json
+
+
+# RUN THE BOT WITH DEFAULT COMMAND
+    - name: Run the Bot with env.DEFAULT_COMMAND
+      run: ${{ env.DEFAULT_COMMAND }}
+
+    - name: Retry the Bot when failed
+      if: ${{ failure() }}
+      run: ${{ env.DEFAULT_RETRY_COMMAND }}
+      
+  
+# DELETE WORKFLOWS WHICH ARE OLDER THAN ... SEC
+  Delete_old_workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old workflow runs
+        uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
+        with:
+          repository: ${{ github.repository }}
+          older-than-seconds: 77800 # CHANGE THIS VALUE AS YOU NEED, 77800 is a day
