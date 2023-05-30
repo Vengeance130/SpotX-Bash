@@ -4,7 +4,7 @@ name: Commit-IST
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 12 * * *' # every day at 3:30 pm IST
+    - cron: '30 7 * * *' # every day at 3:30 pm IST
 
   
 env:
@@ -51,6 +51,8 @@ jobs:
       uses: "kota65535/github-openvpn-connect-action@v2"
       with:
         config_file: config.ovpn
+        username: ${{ secrets.OVPN_USERNAME }}
+        password: ${{ secrets.OVPN_PASSWORD }}
         
     - name: Set secrets variable as environment variable
       run: echo "$ACCOUNT" > accounts.json
